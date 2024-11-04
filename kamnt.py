@@ -1,4 +1,4 @@
-
+#### This code will convert the given number to Kannada Nudi text. ####
 kList={
     '1' : 'MAzÀÄ',
     '2' : 'JgÀqÀÄ',
