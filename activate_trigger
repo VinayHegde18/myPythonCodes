@@ -1,0 +1,48 @@
+import time
+import os
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+# from send_whatsapp_message import WhatsAppBot
+from send_wh_msg_with_onlytext import WhatsAppBot
+whatsapp_instance = None
+def initialize_whatsapp():
+    global whatsapp_instance
+    if whatsapp_instance is None:
+        whatsapp_instance = WhatsAppBot()
+class DirectoryMonitorHandler(FileSystemEventHandler):
+    def on_created(self, event):
+        if event.is_directory:
+            return  # Ignore directory events
+        initialize_whatsapp()
+        # Check if the file is a .txt file
+        if event.src_path.endswith('.txt'):
+            file_name = os.path.basename(event.src_path)
+            
+            # Extract the first 10 digits from the filename (before the underscore)
+            phone_number = ''.join(filter(str.isdigit, file_name.split('_')[0]))[:10]
+            
+            # Read the content of the file
+            with open(event.src_path, "r", encoding="utf-8") as file:
+                content = file.read().strip()
+
+            whatsapp_instance.sendSingleMsg(phone_number,content)
+            try:
+                os.remove(event.src_path)
+            except Exception as e:
+                print(f"Error deleting file {file_name}: {e}")
+
+def monitor_directory(directory_path):
+    event_handler = DirectoryMonitorHandler()
+    observer = Observer()
+    observer.schedule(event_handler, directory_path, recursive=False)
+    observer.start()
+    try:
+        while True:
+            time.sleep(1)  
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
+
+if __name__ == "__main__":
+    directory_path = r'C:\vss\wafiles'
+    monitor_directory(directory_path)
