@@ -1,0 +1,136 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import urllib.parse
+import time
+from selenium.webdriver.common.action_chains import ActionChains
+import pyodbc
+
+class WhatsAppBot:
+    def __init__(self):
+        try:
+            # Setup Chrome options
+            chrome_options = Options()
+            # Uncomment if using a specific Chrome profile
+            # chrome_options.add_argument("--user-data-dir=path_to_your_chrome_user_data")
+
+            # Setup WebDriver
+            service = ChromeService(executable_path=ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            print("WebDriver initialized successfully.")
+        except Exception as e:
+            print(f"Error initializing WebDriver: {e}")
+
+    def wait_for_element(self, by, value, timeout=60):
+        return WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((by, value)))
+
+    def wait_for_element_to_be_clickable(self, by, value, timeout=60):
+        return WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable((by, value)))
+
+    def check_invalid_number(self):
+        try:
+            error_message = self.wait_for_element(By.XPATH, '//div[contains(text(), "Phone number shared via url is invalid.")]')
+            return True if error_message else False
+        except:
+            return False
+
+    def send_message(self, phone_number, message, file_path=None):
+        encoded_message = urllib.parse.quote(message)
+        formatted_phone_number = phone_number.lstrip('+')
+        url = f"https://web.whatsapp.com/send?phone={formatted_phone_number}&text={encoded_message}"
+        self.driver.get(url)
+        file_path = r"D:\invitation.pdf"  # Ensure the file path is correct
+
+        if self.check_invalid_number():
+            print(f"Invalid phone number: {phone_number}")
+            return  # Skip to the next number
+
+        if file_path:
+            self.attach_file(file_path)
+            print("File selected")
+
+        send_button = self.wait_for_element_to_be_clickable(By.XPATH, '//div[@aria-label="Send" and @role="button"]')
+        if send_button:
+            print("Send button located.")
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", send_button)
+            
+            # Try clicking with ActionChains (move to the element and click)
+            actions = ActionChains(self.driver)
+            actions.move_to_element(send_button).click().perform()
+            print("Send button clicked via ActionChains.")
+            
+            # Add a small sleep to let the page settle after the click
+            time.sleep(3)
+
+            try:
+                # Wait for the message to be sent or page to settle by checking for the updated state
+                send_button_after_click = self.wait_for_element(By.XPATH, '//div[@aria-label="Send" and @role="button"]', timeout=60)
+                if send_button_after_click:
+                    print("Send button found after click.")
+                else:
+                    print("Send button not found after click. The page might have updated.")
+            except Exception as e:
+                print(f"Error after clicking send button: {e}")
+                # Save screenshot for debugging
+                self.driver.save_screenshot('send_button_error.png')
+        else:
+            print("Send button not found.")
+
+    def attach_file(self, file_path):
+        select_button = self.wait_for_element(By.XPATH, '//span[@data-icon="plus"]', timeout=60)
+        select_button.click()
+        time.sleep(1)
+        file_input = self.driver.find_element(By.XPATH, "//input[@type='file']")
+        file_input.send_keys(file_path)
+
+    def close(self):
+        if hasattr(self, 'driver'):
+            self.driver.quit()
+
+if __name__ == "__main__":
+    # file_path = r"D:\invitation.pdf"
+    # phone="8217355049"
+    # phones = []
+    # server = 'MAINSERVER\\SQLEXPRESS'
+    # database = 'socsys01'
+    # username = 'sa'
+    # password = 'mm'
+
+    # # Create a connection string
+    # conn_str = f'DRIVER={{ODBC DRIVER 11 FOR SQL SERVER}};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+
+    # # Connect to SQL Server
+    # try:
+    #     conn = pyodbc.connect(conn_str)
+    #     cursor = conn.cursor()
+
+    #     query = f"select WaMobNo from membersr where wdrawyn='E®è' and LEN(name)>0 and LEN(WaMobNo)>0"
+    #     cursor.execute(query)
+
+    #     # Fetch all rows from the query
+    #     rows = cursor.fetchall()
+    #     for row in rows:
+    #         phones.append(row[0])
+
+    # except Exception as e:
+    #     print(f"Error connecting to SQL Server: {str(e)}")
+
+    # finally:
+    #     conn.close()  # Ensure the connection is closed
+
+    message = ("ಸಂಘದ ನೂತನ ಕಟ್ಟಡದ ಉದ್ಘಾಟನಾ ಸಮಾರಂಭವನ್ನು ಇದೇ 18 ನವೆಂಬರ್ 2024 ರಂದು ಸುಸಂಪನ್ನಗೊಳಿಸಲು ನಿಶ್ಚಯಿಸಿರುತ್ತೇವೆ. ತನ್ನಿಮಿತ್ತ ಹಿರಿಯ ಸದಸ್ಯರಿಗೆ ಗೌರವ ಸನ್ಮಾನ, ವಿದ್ಯಾರ್ಥಿ ಪ್ರೋತ್ಸಾಹನ ವಿತರಣೆ, ಸಹಕಾರ ವಿಷಯಕ್ಕೆ ಸಂಬಂಧಿಸಿ ವಿವಿಧ ಗೋಷ್ಠಿ ಮತ್ತು ಯಕ್ಷಗಾನ ಮುಂತಾದ ಕಾರ್ಯಕ್ರಮಗಳನ್ನು ಈ ಸಂದರ್ಭದಲ್ಲಿ ಹಮ್ಮಿಕೊಂಡಿದ್ದೇವೆ."
+              "ಈ ಶುಭ ಸಂದರ್ಭದಲ್ಲಿ ತಾವು ಸಂಘಕ್ಕೆ ಆಗಮಿಸಿ ಉದ್ಘಾಟನಾ ಸಮಾರಂಭ ಸೇರಿದಂತೆ ಈ ಎಲ್ಲಾ ಕಾರ್ಯಕ್ರಮದಲ್ಲಿ ಪಾಲ್ಗೊಂಡು ಸಂಘವು ಹಮ್ಮಿಕೊಂಡ ಕಾರ್ಯಕ್ರಮವನ್ನು ಯಶಸ್ವಿಯಾಗಿಸಿಕೊಡಬೇಕೆಂದು ಈ ಮೂಲಕ ತಮ್ಮಲ್ಲಿ ಕೇಳಿಕೊಳ್ಳುತ್ತಿದ್ದೇವೆ."
+              " - ಕುಂದರಗಿ ವಿವಿದೋದ್ದೇಶ ಗ್ರಾಮೀಣ ಪ್ರಾಥಮಿಕ ಕೃಷಿ ಸಹಕಾರ ಸಂಘ ನಿ., ಭರತನಹಳ್ಳಿ")
+
+    bot = WhatsAppBot()
+
+    # Loop over all phone numbers in the list
+    # for phone in phones:
+    bot.send_message(phone, message, file_path)
+
+    # Close the bot after all messages are sent
+    bot.close()
